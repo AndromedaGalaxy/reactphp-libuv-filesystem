@@ -92,5 +92,7 @@ class Watcher implements EventEmitterInterface {
         
         \uv_close($this->event, static function () {});
         $this->event = null;
+        
+        $this->removeAllListeners();
     }
 }
