@@ -2,8 +2,6 @@
 
 This library provides libuv filesystem for ReactPHP. `react/filesystem` v0.2 (currently not released, as such `dev-master as v0.2.0`) is required.
 
-This library won't keep the event loop running by itself, as filesystem watching is not of active interest by default.
-
 # Example Filesystem Adapter
 
 ```php
@@ -30,6 +28,8 @@ The filename is relative to the watched path and may be an empty string, if chan
 directly is detected by the underlying backend.
 
 What has been exactly changed, must be detected by the user.
+
+This library won't keep the event loop running by itself, as filesystem watching is not of active interest by default.
 
 ```php
 use Andromeda\LibuvFS\Watcher;
