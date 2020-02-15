@@ -51,7 +51,7 @@ class WatcherTest extends TestCase {
     }
     
     function testGetPath() {
-        $this->assertSame($this->path, $this->watcher->getPath());
+        $this->assertSame(\rtrim($this->path, \DIRECTORY_SEPARATOR), $this->watcher->getPath());
     }
     
     function testWatchingCreateNewFile() {
