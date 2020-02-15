@@ -19,6 +19,7 @@ job-template: &job-template
         keys:
           - dependencies
 
+    - run: composer require react/filesystem "dev-master as v0.2.0" --no-interaction
     - run: composer install --no-interaction
     #- run: composer require --dev pcov/clobber && vendor/bin/pcov clobber
 
