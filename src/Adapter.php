@@ -58,14 +58,6 @@ class Adapter implements AdapterInterface {
     protected $fileDescriptors = array();
     
     /**
-     * @var array
-     */
-    protected $options = array(
-        'lsFlags' => 0,
-        'symlinkFlags' => 0,
-    );
-    
-    /**
      * @var int
      */
     protected $workCounter = 0;
@@ -83,9 +75,8 @@ class Adapter implements AdapterInterface {
     /**
      * @inheritDoc
      */
-    function __construct(ExtUvLoop $loop, array $options = []) {
+    function __construct(ExtUvLoop $loop) {
         $this->loop = $loop;
-        $this->options = \array_merge($this->options, $options);
         $this->workInterval = ((int) (\PHP_INT_MAX / 1000)) - 1;
         
         $this->openFlagResolver = new OpenFlagResolver();
@@ -181,8 +172,16 @@ class Adapter implements AdapterInterface {
                 $mode
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to set chmod on target');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to set chmod on target';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -201,8 +200,16 @@ class Adapter implements AdapterInterface {
                 $this->permissionFlagResolver->resolve($mode)
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to create directory at path');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to create directory at path';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -219,8 +226,16 @@ class Adapter implements AdapterInterface {
                 $path
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to delete directory');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to delete directory';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -237,8 +252,16 @@ class Adapter implements AdapterInterface {
                 $path
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to delete the target');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to delete the target';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -259,8 +282,16 @@ class Adapter implements AdapterInterface {
                 $gid
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to chown the target');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to chown the target';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -277,8 +308,18 @@ class Adapter implements AdapterInterface {
                 $filename
             ),
             static function ($bool, $stat = null) {
-                if($bool !== true) {
-                    throw new \RuntimeException('Unable to stat the target');
+                if(
+                    (\is_bool($bool) && $bool === false) ||
+                    (\is_int($bool) && $bool !== 0)
+                ) {
+                    $str = 'Unable to stat the target';
+                    if($bool < 0) {
+                        $str = \uv_strerror($bool);
+                    }
+                    
+                    throw new \RuntimeException($str);
+                } elseif(\is_array($bool)) {
+                    $stat = $bool;
                 }
                 
                 $stat['blksize'] = $stat['blksize'] ?? -1;
@@ -297,16 +338,31 @@ class Adapter implements AdapterInterface {
      * @return PromiseInterface
      */
     function ls($path) {
+        $args = array($path);
+        
+        if(\version_compare(\phpversion('uv'), '0.2.4', '<=')) {
+            $args[] = 0;
+        }
+        
         return $this->callFilesystem(
             'uv_fs_scandir',
-            array(
-                $path,
-                $this->options['lsFlags']
-            ),
+            $args,
             function ($bool, $result = null) use ($path) {
-                if($bool !== true) {
-                    throw new \RuntimeException('Unable to list the directory');
-                } elseif(empty($result)) {
+                if(
+                    (\is_bool($bool) && $bool === false) ||
+                    (\is_int($bool) && $bool !== 0)
+                ) {
+                    $str = 'Unable to list the directory';
+                    if($bool < 0) {
+                        $str = \uv_strerror($bool);
+                    }
+                    
+                    throw new \RuntimeException($str);
+                } elseif(\is_array($bool)) {
+                    $result = $bool;
+                }
+                
+                if(empty($result)) {
                     return array();
                 }
                 
@@ -324,29 +380,48 @@ class Adapter implements AdapterInterface {
      */
     function lsStream($path) {
         $stream = new ObjectStream();
+        $args = array($path);
+        
+        if(\version_compare(\phpversion('uv'), '0.2.4', '<=')) {
+            $args[] = 0;
+        }
         
         $this->callFilesystem(
             'uv_fs_scandir',
-            array(
-                $path,
-                $this->options['lsFlags']
-            ),
+            $args,
             function ($bool, $result = null) use ($path, $stream) {
-                if($bool !== true) {
-                    $e = new \RuntimeException('Unable to list the directory');
+                if(
+                    (\is_bool($bool) && $bool === false) ||
+                    (\is_int($bool) && $bool !== 0)
+                ) {
+                    $str = 'Unable to list the directory';
+                    if($bool < 0) {
+                        $str = \uv_strerror($bool);
+                    }
+                    
+                    $e = new \RuntimeException($str);
                     
                     $stream->emit('error', array($e));
                     $stream->close();
                     
                     return;
-                } elseif(empty($result)) {
+                } elseif(\is_array($bool)) {
+                    $result = $bool;
+                }
+                
+                if(empty($result)) {
                     $stream->close();
                     return;
                 }
                 
                 $this->processLsContents($path, $result, $stream);
             }
-        );
+        )->then(null, static function (\Throwable $e) use ($stream) {
+            $stream->emit('error', array($e));
+            $stream->close();
+            
+            return;
+        });
         
         return $stream;
     }
@@ -391,8 +466,16 @@ class Adapter implements AdapterInterface {
                     \time()
                 ),
                 static function ($result) {
-                    if($result === false) {
-                        throw new \RuntimeException('Unable to touch target');
+                    if(
+                        (\is_bool($result) && $result === false) ||
+                        (\is_int($result) && $result !== 0)
+                    ) {
+                        $str = 'Unable to touch target';
+                        if($result < 0) {
+                            $str = \uv_strerror($result);
+                        }
+                        
+                        throw new \RuntimeException($str);
                     }
                 }
             );
@@ -414,8 +497,16 @@ class Adapter implements AdapterInterface {
                 $this->permissionFlagResolver->resolve($mode)
             ),
             function ($fd) {
-                if($fd === false) {
-                    throw new \RuntimeException('Unable to open file, make sure the file exists and is readable');
+                if(
+                    (\is_bool($fd) && $fd === false) ||
+                    (\is_int($fd) && $fd <= 0)
+                ) {
+                    $str = 'Unable to open file, make sure the file exists and is readable';
+                    if($fd < 0) {
+                        $str = \uv_strerror($fd);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
                 
                 $fdint = (int) $fd;
@@ -427,9 +518,9 @@ class Adapter implements AdapterInterface {
     }
     
     /**
-     * @param string  $fileDescriptor
-     * @param int     $length
-     * @param int     $offset
+     * @param string|int  $fileDescriptor
+     * @param int         $length
+     * @param int         $offset
      * @return PromiseInterface
      * @noinspection PhpUnusedParameterInspection
      */
@@ -449,17 +540,23 @@ class Adapter implements AdapterInterface {
                 $offset,
                 $length
             ),
-            static function ($fd, $nread, $buffer) {
+            static function ($fd, $nread, $buffer = null) {
+                if(\is_string($nread)) {
+                    $buffer = $nread;
+                } elseif($nread < 0) {
+                    throw new \RuntimeException(\uv_strerror($nread));
+                }
+                
                 return $buffer;
             }
         );
     }
     
     /**
-     * @param string  $fileDescriptor
-     * @param string  $data
-     * @param int     $length  Unused.
-     * @param int     $offset
+     * @param string|int  $fileDescriptor
+     * @param string      $data
+     * @param int         $length  Unused.
+     * @param int         $offset
      * @return PromiseInterface
      * @noinspection PhpUnusedParameterInspection
      */
@@ -480,13 +577,17 @@ class Adapter implements AdapterInterface {
                 $offset
             ),
             static function ($fd, $result) {
+                if($result < 0) {
+                    throw new \RuntimeException(\uv_strerror($result));
+                }
+                
                 return $result;
             }
         );
     }
     
     /**
-     * @param string  $fileDescriptor
+     * @param string|int  $fileDescriptor
      * @return PromiseInterface
      */
     function close($fileDescriptor) {
@@ -504,8 +605,10 @@ class Adapter implements AdapterInterface {
             array(
                 $fd
             ),
-            static function () {
-                // NO-OP
+            static function (int $result) {
+                if($result < 0) {
+                    throw new \RuntimeException(\uv_strerror($result));
+                }
             }
         );
     }
@@ -591,8 +694,16 @@ class Adapter implements AdapterInterface {
                 $toPath
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to rename target');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to rename target';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );
@@ -608,9 +719,19 @@ class Adapter implements AdapterInterface {
             array(
                 $path
             ),
-            static function ($bool, $result) {
-                if($bool === false) {
-                    throw new \RuntimeException('Unable to read link of target');
+            static function ($bool, $result = null) {
+                if(
+                    (\is_bool($bool) && $bool === false) ||
+                    (\is_int($bool) && $bool !== 0)
+                ) {
+                    $str = 'Unable to read link of target';
+                    if($bool < 0) {
+                        $str = \uv_strerror($bool);
+                    }
+                    
+                    throw new \RuntimeException($str);
+                } elseif(\is_string($bool)) {
+                    $result = $bool;
                 }
                 
                 return $result;
@@ -629,11 +750,19 @@ class Adapter implements AdapterInterface {
             array(
                 $fromPath,
                 $toPath,
-                $this->options['symlinkFlags']
+                0
             ),
             static function ($result) {
-                if($result === false) {
-                    throw new \RuntimeException('Unable to create a symlink for the target');
+                if(
+                    (\is_bool($result) && $result === false) ||
+                    (\is_int($result) && $result !== 0)
+                ) {
+                    $str = 'Unable to create a symlink for the target';
+                    if($result < 0) {
+                        $str = \uv_strerror($result);
+                    }
+                    
+                    throw new \RuntimeException($str);
                 }
             }
         );

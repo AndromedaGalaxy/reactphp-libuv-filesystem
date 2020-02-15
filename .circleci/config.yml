@@ -7,7 +7,7 @@ job-template: &job-template
     - run: sudo apt-get install libuv1-dev
 
     # Install PHP dependencies
-    - run: sudo -E pecl install uv-beta
+    - run: if [[ "$TYPE" = "git" ]]; then git clone https://www.github.com/bwoebi/php-uv && cd php-uv && phpize && ./configure && make && sudo -E make install; else sudo -E pecl install uv-beta; fi
     #- run: sudo -E pecl install pcov
 
     # Add extensions to php.ini
@@ -28,50 +28,125 @@ job-template: &job-template
         paths:
           - $HOME/.composer/cache/files
 
+    - run: php -v
     - run: mkdir test-results
     - run: vendor/bin/phpunit --configuration phpunit.xml.dist --log-junit test-results/junit-report.xml
     - store_test_results:
         path: test-results
 
 jobs:
+  # pecl builds
   php-7.1:
     docker:
       - image: circleci/php:7.1
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.1-zts:
     docker:
       - image: circleci/php:7.1-zts
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.2:
     docker:
       - image: circleci/php:7.2
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.2-zts:
     docker:
       - image: circleci/php:7.2-zts
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.3:
     docker:
       - image: circleci/php:7.3
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.3-zts:
     docker:
       - image: circleci/php:7.3-zts
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.4:
     docker:
       - image: circleci/php:7.4
+    environment:
+      TYPE: "pecl"
     <<: *job-template
 
   php-7.4-zts:
     docker:
       - image: circleci/php:7.4-zts
+    environment:
+      TYPE: "pecl"
+    <<: *job-template
+
+  # git builds
+  php-7.1-git:
+    docker:
+      - image: circleci/php:7.1
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.1-zts-git:
+    docker:
+      - image: circleci/php:7.1-zts
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.2-git:
+    docker:
+      - image: circleci/php:7.2
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.2-zts-git:
+    docker:
+      - image: circleci/php:7.2-zts
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.3-git:
+    docker:
+      - image: circleci/php:7.3
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.3-zts-git:
+    docker:
+      - image: circleci/php:7.3-zts
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.4-git:
+    docker:
+      - image: circleci/php:7.4
+    environment:
+      TYPE: "git"
+    <<: *job-template
+
+  php-7.4-zts-git:
+    docker:
+      - image: circleci/php:7.4-zts
+    environment:
+      TYPE: "git"
     <<: *job-template
 
 workflows:
@@ -86,3 +161,11 @@ workflows:
       - php-7.3-zts
       - php-7.4
       - php-7.4-zts
+      - php-7.1-git
+      - php-7.1-zts-git
+      - php-7.2-git
+      - php-7.2-zts-git
+      - php-7.3-git
+      - php-7.3-zts-git
+      - php-7.4-git
+      - php-7.4-zts-git

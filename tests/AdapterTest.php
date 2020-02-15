@@ -237,7 +237,7 @@ class AdapterTest extends TestCase {
         $path = $this->tmpdir.\uniqid('', true);
         
         $this->expectException(\RuntimeException::class);
-        $this->await($this->adapter->ls($path), $this->adapter->getLoop());
+        $this->await($this->adapter->ls($path), $this->adapter->getLoop(), 60.0);
     }
     
     function testLsEmptyDir() {
