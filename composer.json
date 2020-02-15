@@ -1,0 +1,32 @@
+{
+    "name": "andromeda/react-libuv-filesystem",
+    "description": "Libuv Filesystem for ReactPHP.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Andromeda",
+            "email": "andromeda@neko.run"
+        }
+    ],
+    "require": {
+        "php-64bit": ">=7.1",
+        "ext-uv": "*",
+        "react/event-loop": "^1.0|^0.5|^0.4",
+        "react/filesystem": "^0.2.0|dev-master as 0.2.0-beta"
+    },
+    "require-dev": {
+        "clue/block-react": "^1.3",
+        "phpunit/phpunit": "^7.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Andromeda\\LibuvFS\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Andromeda\\LibuvFS\\Tests\\": "tests"
+        }
+    }
+}
