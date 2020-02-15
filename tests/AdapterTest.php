@@ -94,14 +94,14 @@ class AdapterTest extends TestCase {
     }
     
     function testMkdirAndRmdir() {
-        $path = $this->tmpdir.'testdir';
-        @\rmdir($path);
+        $path = $this->tmpdir.'testdir-'.\uniqid('', true);
+        $this->assertDirectoryNotExists($path);
         
         $this->await($this->adapter->mkdir($path), $this->adapter->getLoop());
-        $this->assertNotFalse(\realpath($path));
+        $this->assertDirectoryExists($path);
         
         $this->await($this->adapter->rmdir($path), $this->adapter->getLoop());
-        $this->assertFalse(\realpath($path));
+        $this->assertFalse(\file_exists($path)); // is_dir returns true while file_exists and realpath return false
     }
     
     function testMkdirError() {
