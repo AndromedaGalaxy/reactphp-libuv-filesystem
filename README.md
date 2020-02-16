@@ -43,7 +43,7 @@ $watcher->on('change', static function (?string $name) {
 });
 
 // keep the event loop running
-$loop->addTimer(PHP_INT_MAX, static function () {});
+$loop->addTimer(((PHP_INT_MAX / 1000) - 2), static function () {});
 
 $loop->run();
 ```
