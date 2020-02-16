@@ -54,7 +54,7 @@ class Watcher implements EventEmitterInterface {
         
         /** @noinspection PhpInternalEntityUsedInspection */
         $this->event = \uv_fs_event_init($loop->getUvLoop(), $path, function ($rsc, $name, $event, $stat) use (&$dedup, &$dedupTime) {
-            if($name === $dedup && \uv_hrtime() <= ((int) ($dedupTime + 2 * 10e6))) {
+            if($name === $dedup && \uv_hrtime() <= ((int) ($dedupTime + 2e6))) {
                 // ignore subsequent event that follows an event within 2ms for the same target (i.e. rename -> change)
                 return; // @codeCoverageIgnore
             }
