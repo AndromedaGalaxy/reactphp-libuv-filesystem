@@ -30,7 +30,7 @@ job-template: &job-template
 
     - run: php -v
     - run: mkdir test-results
-    - run: vendor/bin/phpunit --configuration phpunit.xml.dist --log-junit test-results/junit-report.xml
+    - run: vendor/bin/phpunit --configuration phpunit.xml.dist --log-junit test-results/junit-report.xml --coverage-text
     - store_test_results:
         path: test-results
 
