@@ -1,3 +1,5 @@
+version: 2.1
+
 job-template: &job-template
   steps:
     - checkout
@@ -26,7 +28,7 @@ job-template: &job-template
     - save_cache:
         key: dependencies
         paths:
-          - $HOME/.composer/cache/files
+          - /home/circleci/.composer/cache/files
 
     - run: php -v
     - run: mkdir test-results
@@ -34,58 +36,119 @@ job-template: &job-template
     - store_test_results:
         path: test-results
 
+job-template-win: &job-template-win
+  steps:
+    - checkout
+
+    # set choco cache location
+    - run: mkdir C:\choco-cache
+    - run: choco config set cacheLocation C:\choco-cache
+
+    # Restore system dependencies cache
+    - restore_cache:
+        keys:
+          - sys-dependencies
+
+     # install system dependencies
+    - run: if ($env:PHP_TYPE -eq "ts") { choco install php --package-parameters='"/ThreadSafe "' } else { choco install php }
+    - run: choco install composer
+
+    # Cache system dependencies
+    - save_cache:
+        key: sys-dependencies
+        paths:
+          - C:\choco-cache
+
+    # prevent console output errors ...
+
+    # install PHP dependencies
+    - run: $ProgressPreference = 'SilentlyContinue'; $link = 'https://windows.php.net/downloads/pecl/releases/uv/0.2.4/php_uv-0.2.4-7.4-'+$env:PHP_TYPE+'-vc15-x64.zip'; Invoke-WebRequest -Uri $link -OutFile .\uv.zip
+    - run: $ProgressPreference = 'SilentlyContinue'; Expand-Archive .\uv.zip -Destination .\uv
+    - run: Move-Item -Path .\uv\libuv.dll -Destination C:\tools\php74\libuv.dll
+    - run: Move-Item -Path .\uv\php_uv.dll -Destination C:\tools\php74\ext\php_uv.dll
+
+    - run: $ProgressPreference = 'SilentlyContinue'; $link = 'https://windows.php.net/downloads/pecl/releases/pcov/1.0.6/php_pcov-1.0.6-7.4-'+$env:PHP_TYPE+'-vc15-x64.zip'; Invoke-WebRequest -Uri $link -OutFile .\pcov.zip
+    - run: $ProgressPreference = 'SilentlyContinue'; Expand-Archive .\pcov.zip -Destination .\pcov
+    - run: Move-Item -Path .\pcov\php_pcov.dll -Destination C:\tools\php74\ext\php_pcov.dll
+
+    # Use our php.ini instead of the default
+    - run: Move-Item -Path .\.circleci\php.ini.win -Destination C:\tools\php74\php.ini -Force
+
+    # Download and cache dependencies
+    - restore_cache:
+        keys:
+          - dependencies
+
+    - run: composer require react/filesystem "dev-master as v0.2.0" --no-interaction
+    - run: composer install --no-interaction
+    - run: composer require --dev pcov/clobber; vendor\bin\pcov clobber
+
+    - save_cache:
+        key: dependencies
+        paths:
+          - /home/circleci/.composer/cache/files
+
+    - run: php.exe -v
+    - run: mkdir test-results
+    - run: vendor\bin\phpunit --configuration phpunit.xml.dist --log-junit test-results\junit-report.xml --coverage-text
+    - store_test_results:
+        path: test-results
+
+orbs:
+  win: circleci/windows@1.0.0
+
 jobs:
   # pecl builds
-  php-7.1:
+  php-71:
     docker:
       - image: circleci/php:7.1
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.1-zts:
+  php-71-zts:
     docker:
       - image: circleci/php:7.1-zts
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.2:
+  php-72:
     docker:
       - image: circleci/php:7.2
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.2-zts:
+  php-72-zts:
     docker:
       - image: circleci/php:7.2-zts
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.3:
+  php-73:
     docker:
       - image: circleci/php:7.3
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.3-zts:
+  php-73-zts:
     docker:
       - image: circleci/php:7.3-zts
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.4:
+  php-74:
     docker:
       - image: circleci/php:7.4
     environment:
       TYPE: "pecl"
     <<: *job-template
 
-  php-7.4-zts:
+  php-74-zts:
     docker:
       - image: circleci/php:7.4-zts
     environment:
@@ -93,79 +156,102 @@ jobs:
     <<: *job-template
 
   # git builds
-  php-7.1-git:
+  php-71-git:
     docker:
       - image: circleci/php:7.1
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.1-zts-git:
+  php-71-zts-git:
     docker:
       - image: circleci/php:7.1-zts
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.2-git:
+  php-72-git:
     docker:
       - image: circleci/php:7.2
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.2-zts-git:
+  php-72-zts-git:
     docker:
       - image: circleci/php:7.2-zts
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.3-git:
+  php-73-git:
     docker:
       - image: circleci/php:7.3
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.3-zts-git:
+  php-73-zts-git:
     docker:
       - image: circleci/php:7.3-zts
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.4-git:
+  php-74-git:
     docker:
       - image: circleci/php:7.4
     environment:
       TYPE: "git"
     <<: *job-template
 
-  php-7.4-zts-git:
+  php-74-zts-git:
     docker:
       - image: circleci/php:7.4-zts
     environment:
       TYPE: "git"
     <<: *job-template
 
+  # windows builds
+  php-win:
+    executor: win/default
+    environment:
+      PHP_TYPE: "nts"
+      TYPE: "pecl"
+    <<: *job-template-win
+
+  php-zts-win:
+    executor: win/default
+    environment:
+      PHP_TYPE: "ts"
+      TYPE: "pecl"
+    <<: *job-template-win
+    
+
 workflows:
   version: 2
   tests:
     jobs:
-      - php-7.1
-      - php-7.1-zts
-      - php-7.2
-      - php-7.2-zts
-      - php-7.3
-      - php-7.3-zts
-      - php-7.4
-      - php-7.4-zts
-      - php-7.1-git
-      - php-7.1-zts-git
-      - php-7.2-git
-      - php-7.2-zts-git
-      - php-7.3-git
-      - php-7.3-zts-git
-      - php-7.4-git
-      - php-7.4-zts-git
+      # pecl builds
+      - php-71
+      - php-71-zts
+      - php-72
+      - php-72-zts
+      - php-73
+      - php-73-zts
+      - php-74
+      - php-74-zts
+
+      # git builds
+      - php-71-git
+      - php-71-zts-git
+      - php-72-git
+      - php-72-zts-git
+      - php-73-git
+      - php-73-zts-git
+      - php-74-git
+      - php-74-zts-git
+
+      # windows builds
+      - php-win
+      - php-zts-win
