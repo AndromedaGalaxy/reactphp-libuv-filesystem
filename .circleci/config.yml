@@ -55,7 +55,7 @@ job-template-win: &job-template-win
 
     # Cache system dependencies
     - save_cache:
-        key: sys-dependencies-{{ checksum "C:\tools\php74\php.exe" }}
+        key: sys-dependencies-{{ checksum "C:\\tools\\php74\\php.exe" }}
         paths:
           - C:\choco-cache
 
