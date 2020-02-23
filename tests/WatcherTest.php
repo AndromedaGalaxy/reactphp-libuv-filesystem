@@ -82,7 +82,7 @@ class WatcherTest extends TestCase {
         \rename($this->path.'existing', $this->path.'existing2');
         
         $result = await($deferred->promise(), $this->loop, 1.0);
-        if(\PHP_OS_FAMILY !== 'Windows' || $result !== array(null) {
+        if(\PHP_OS_FAMILY !== 'Windows' || $result !== array(null)) {
             $this->assertSame(array('existing'), $result);
         }
         $this->assertSame(2, $cbCalled);
@@ -100,7 +100,7 @@ class WatcherTest extends TestCase {
         \unlink($this->path.'existing');
         
         $result = await($deferred->promise(), $this->loop, 1.0);
-        if(\PHP_OS_FAMILY !== 'Windows' || $result !== array(null) {
+        if(\PHP_OS_FAMILY !== 'Windows' || $result !== array(null)) {
             $this->assertSame(array('existing'), $result);
         }
         $this->assertSame(1, $cbCalled);
