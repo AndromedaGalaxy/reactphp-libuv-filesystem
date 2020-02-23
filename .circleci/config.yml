@@ -77,14 +77,14 @@ job-template-win: &job-template-win
     # Download and cache dependencies
     - restore_cache:
         keys:
-          - dependencies
+          - dependencies-
 
     - run: composer require react/filesystem "dev-master as v0.2.0" --no-interaction
     - run: composer install --no-interaction
     - run: composer require --dev pcov/clobber; vendor\bin\pcov clobber
 
     - save_cache:
-        key: dependencies-
+        key: dependencies-{{ checksum "composer.json" }}
         paths:
           - /home/circleci/.composer/cache/files
 
