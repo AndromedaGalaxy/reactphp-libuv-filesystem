@@ -69,6 +69,7 @@ class Watcher implements EventEmitterInterface {
     
     /**
      * @codeCoverageIgnore
+     * @return void
      */
     function __destruct() {
         $this->close();
@@ -84,6 +85,7 @@ class Watcher implements EventEmitterInterface {
     
     /**
      * Closes the watcher.
+     * @return void
      */
     function close(): void {
         if($this->event === null) {
