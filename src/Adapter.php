@@ -112,7 +112,7 @@ class Adapter implements AdapterInterface {
         
         $this->typeDetectors = array(
             MappedTypeDetector::createDefault($this->filesystem),
-            new ModeTypeDetector($this->filesystem),
+            (new ModeTypeDetector($this->filesystem)),
         );
     }
     
