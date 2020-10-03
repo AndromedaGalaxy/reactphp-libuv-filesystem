@@ -267,9 +267,9 @@ class Adapter implements AdapterInterface {
             array(
                 $filename
             ),
-            static function ($result, $stat = null) {
-                if($result !== 0) {
-                    throw new \RuntimeException('Unable to stat the target: '.\uv_strerror($result));
+            static function ($stat) {
+                if(\is_int($stat) && $stat !== 0) {
+                    throw new \RuntimeException('Unable to stat the target: '.\uv_strerror($stat));
                 }
                 
                 $stat['blksize'] = $stat['blksize'] ?? -1;
@@ -293,17 +293,17 @@ class Adapter implements AdapterInterface {
             array(
                 $path
             ),
-            function ($result, $dir = null) use ($path) {
-                if($result !== 0) {
+            function ($result) use ($path) {
+                if(\is_int($result) && $result !== 0) {
                     throw new \RuntimeException('Unable to list the directory: '.\uv_strerror($result));
                 }
                 
-                if(empty($dir)) {
+                if(empty($result)) {
                     return array();
                 }
                 
                 $stream = new ObjectStream();
-                $this->processLsContents($path, $dir, $stream);
+                $this->processLsContents($path, $result, $stream);
                 
                 return ObjectStreamSink::promise($stream);
             }
@@ -322,8 +322,8 @@ class Adapter implements AdapterInterface {
             array(
                 $path
             ),
-            function ($result, $dir = null) use ($path, $stream) {
-                if($result !== 0) {
+            function ($result) use ($path, $stream) {
+                if(\is_int($result) && $result !== 0) {
                     $e = new \RuntimeException('Unable to list the directory: '.\uv_strerror($result));
                     
                     $stream->emit('error', array($e));
@@ -332,12 +332,12 @@ class Adapter implements AdapterInterface {
                     return;
                 }
                 
-                if(empty($dir)) {
+                if(empty($result)) {
                     $stream->close();
                     return;
                 }
                 
-                $this->processLsContents($path, $dir, $stream);
+                $this->processLsContents($path, $result, $stream);
             }
         )->then(null, static function (\Throwable $e) use ($stream) {
             $stream->emit('error', array($e));
@@ -618,12 +618,12 @@ class Adapter implements AdapterInterface {
             array(
                 $path
             ),
-            static function ($result, $link = null) {
-                if($result !== 0) {
+            static function ($result) {
+                if(\is_int($result) && $result !== 0) {
                     throw new \RuntimeException('Unable to read link of target: '.\uv_strerror($result));
                 }
                 
-                return $link;
+                return $result;
             }
         );
     }
