@@ -2,6 +2,8 @@
 
 This library provides libuv filesystem for ReactPHP. `react/filesystem` v0.2 (currently not released, as such `dev-master as v0.2.0`) is required.
 
+Requires php-uv v0.3.0+.
+
 # Example Filesystem Adapter
 
 ```php
