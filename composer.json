@@ -11,7 +11,7 @@
     ],
     "require": {
         "php-64bit": ">=7.1",
-        "ext-uv": "*",
+        "ext-uv": ">=0.3",
         "react/event-loop": "^1.0|^0.5|^0.4",
         "react/filesystem": "^0.2|^0.1.99",
         "symfony/polyfill-php72": "^1.14"
