@@ -424,8 +424,6 @@ class AdapterTest extends TestCase {
     }
     
     function testReadlinkError() {
-        $this->markTestSkipped('Segfault fix was not released yet (commit c06742a)');
-        
         $path = $this->tmpdir.\uniqid('', true);
         
         $this->expectException(\RuntimeException::class);
