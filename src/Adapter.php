@@ -172,16 +172,8 @@ class Adapter implements AdapterInterface {
                 $mode
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to set chmod on target';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to set chmod on target: '.\uv_strerror($result));
                 }
             }
         );
@@ -200,16 +192,8 @@ class Adapter implements AdapterInterface {
                 $this->permissionFlagResolver->resolve($mode)
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to create directory at path';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to create directory at path: '.\uv_strerror($result));
                 }
             }
         );
@@ -226,16 +210,8 @@ class Adapter implements AdapterInterface {
                 $path
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to delete directory';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to delete directory: '.\uv_strerror($result));
                 }
             }
         );
@@ -252,16 +228,8 @@ class Adapter implements AdapterInterface {
                 $path
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to delete the target';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to delete the target: '.\uv_strerror($result));
                 }
             }
         );
@@ -282,16 +250,8 @@ class Adapter implements AdapterInterface {
                 $gid
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to chown the target';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to chown the target: '.\uv_strerror($result));
                 }
             }
         );
@@ -307,19 +267,9 @@ class Adapter implements AdapterInterface {
             array(
                 $filename
             ),
-            static function ($bool, $stat = null) {
-                if(
-                    (\is_bool($bool) && $bool === false) ||
-                    (\is_int($bool) && $bool !== 0)
-                ) {
-                    $str = 'Unable to stat the target';
-                    if($bool < 0) {
-                        $str = \uv_strerror($bool);
-                    }
-                    
-                    throw new \RuntimeException($str);
-                } elseif(\is_array($bool)) {
-                    $stat = $bool;
+            static function ($result, $stat = null) {
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to stat the target: '.\uv_strerror($result));
                 }
                 
                 $stat['blksize'] = $stat['blksize'] ?? -1;
@@ -338,36 +288,22 @@ class Adapter implements AdapterInterface {
      * @return PromiseInterface
      */
     function ls($path) {
-        $args = array($path);
-        
-        if(\version_compare(\phpversion('uv'), '0.2.4', '<=')) {
-            $args[] = 0;
-        }
-        
         return $this->callFilesystem(
             'uv_fs_scandir',
-            $args,
-            function ($bool, $result = null) use ($path) {
-                if(
-                    (\is_bool($bool) && $bool === false) ||
-                    (\is_int($bool) && $bool !== 0)
-                ) {
-                    $str = 'Unable to list the directory';
-                    if($bool < 0) {
-                        $str = \uv_strerror($bool);
-                    }
-                    
-                    throw new \RuntimeException($str);
-                } elseif(\is_array($bool)) {
-                    $result = $bool;
+            array(
+                $path
+            ),
+            function ($result, $dir = null) use ($path) {
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to list the directory: '.\uv_strerror($result));
                 }
                 
-                if(empty($result)) {
+                if(empty($dir)) {
                     return array();
                 }
                 
                 $stream = new ObjectStream();
-                $this->processLsContents($path, $result, $stream);
+                $this->processLsContents($path, $dir, $stream);
                 
                 return ObjectStreamSink::promise($stream);
             }
@@ -380,41 +316,28 @@ class Adapter implements AdapterInterface {
      */
     function lsStream($path) {
         $stream = new ObjectStream();
-        $args = array($path);
-        
-        if(\version_compare(\phpversion('uv'), '0.2.4', '<=')) {
-            $args[] = 0;
-        }
         
         $this->callFilesystem(
             'uv_fs_scandir',
-            $args,
-            function ($bool, $result = null) use ($path, $stream) {
-                if(
-                    (\is_bool($bool) && $bool === false) ||
-                    (\is_int($bool) && $bool !== 0)
-                ) {
-                    $str = 'Unable to list the directory';
-                    if($bool < 0) {
-                        $str = \uv_strerror($bool);
-                    }
-                    
-                    $e = new \RuntimeException($str);
+            array(
+                $path
+            ),
+            function ($result, $dir = null) use ($path, $stream) {
+                if($result !== 0) {
+                    $e = new \RuntimeException('Unable to list the directory: '.\uv_strerror($result));
                     
                     $stream->emit('error', array($e));
                     $stream->close();
                     
                     return;
-                } elseif(\is_array($bool)) {
-                    $result = $bool;
                 }
                 
-                if(empty($result)) {
+                if(empty($dir)) {
                     $stream->close();
                     return;
                 }
                 
-                $this->processLsContents($path, $result, $stream);
+                $this->processLsContents($path, $dir, $stream);
             }
         )->then(null, static function (\Throwable $e) use ($stream) {
             $stream->emit('error', array($e));
@@ -466,16 +389,8 @@ class Adapter implements AdapterInterface {
                     \time()
                 ),
                 static function ($result) {
-                    if(
-                        (\is_bool($result) && $result === false) ||
-                        (\is_int($result) && $result !== 0)
-                    ) {
-                        $str = 'Unable to touch target';
-                        if($result < 0) {
-                            $str = \uv_strerror($result);
-                        }
-                        
-                        throw new \RuntimeException($str);
+                    if($result !== 0) {
+                        throw new \RuntimeException('Unable to touch target'\uv_strerror($result));
                     }
                 }
             );
@@ -497,16 +412,8 @@ class Adapter implements AdapterInterface {
                 $this->permissionFlagResolver->resolve($mode)
             ),
             function ($fd) {
-                if(
-                    (\is_bool($fd) && $fd === false) ||
-                    (\is_int($fd) && $fd <= 0)
-                ) {
-                    $str = 'Unable to open file, make sure the file exists and is readable';
-                    if($fd < 0) {
-                        $str = \uv_strerror($fd);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($fd <= 0) {
+                    throw new \RuntimeException('Unable to open file, make sure the file exists and is readable: '.\uv_strerror($fd));
                 }
                 
                 $fdint = (int) $fd;
@@ -694,16 +601,8 @@ class Adapter implements AdapterInterface {
                 $toPath
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to rename target';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to rename target: '.\uv_strerror($result);
                 }
             }
         );
@@ -719,22 +618,12 @@ class Adapter implements AdapterInterface {
             array(
                 $path
             ),
-            static function ($bool, $result = null) {
-                if(
-                    (\is_bool($bool) && $bool === false) ||
-                    (\is_int($bool) && $bool !== 0)
-                ) {
-                    $str = 'Unable to read link of target';
-                    if($bool < 0) {
-                        $str = \uv_strerror($bool);
-                    }
-                    
-                    throw new \RuntimeException($str);
-                } elseif(\is_string($bool)) {
-                    $result = $bool;
+            static function ($result, $link = null) {
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to read link of target: '.\uv_strerror($result));
                 }
                 
-                return $result;
+                return $link;
             }
         );
     }
@@ -753,16 +642,8 @@ class Adapter implements AdapterInterface {
                 0
             ),
             static function ($result) {
-                if(
-                    (\is_bool($result) && $result === false) ||
-                    (\is_int($result) && $result !== 0)
-                ) {
-                    $str = 'Unable to create a symlink for the target';
-                    if($result < 0) {
-                        $str = \uv_strerror($result);
-                    }
-                    
-                    throw new \RuntimeException($str);
+                if($result !== 0) {
+                    throw new \RuntimeException('Unable to create a symlink for the target: '.\uv_strerror($result));
                 }
             }
         );
