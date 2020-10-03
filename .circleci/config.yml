@@ -233,14 +233,15 @@ workflows:
   tests:
     jobs:
       # pecl builds
-      - php-71
-      - php-71-zts
-      - php-72
-      - php-72-zts
-      - php-73
-      - php-73-zts
-      - php-74
-      - php-74-zts
+      # uncommented due to no release yet
+      # - php-71
+      # - php-71-zts
+      # - php-72
+      # - php-72-zts
+      # - php-73
+      # - php-73-zts
+      # - php-74
+      # - php-74-zts
 
       # git builds
       - php-71-git
@@ -253,5 +254,6 @@ workflows:
       - php-74-zts-git
 
       # windows builds
-      - php-win
-      - php-zts-win
+      # uncommented due to no release yet
+      # - php-win
+      # - php-zts-win
