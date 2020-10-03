@@ -390,7 +390,7 @@ class Adapter implements AdapterInterface {
                 ),
                 static function ($result) {
                     if($result !== 0) {
-                        throw new \RuntimeException('Unable to touch target'\uv_strerror($result));
+                        throw new \RuntimeException('Unable to touch target: '.\uv_strerror($result));
                     }
                 }
             );
